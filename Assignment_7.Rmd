@@ -1,0 +1,189 @@
+---
+title: "Lab7 Assignment"
+author: "Gabriela Garza-Long"
+date: "04-20-2025"
+output: html_document
+---
+
+``````{r}
+library(data.table)
+library(haven)
+library(foreign)
+library(ggplot2)
+library(dplyr)
+
+#1. Load Household Dataset
+hts <- read_sav("~/Desktop/Methods2_Labs/07-lab-assignment-2025-Green-range/datasets/HTS.household.10regions.sav")
+hts <- as.data.table(hts)
+
+# Convert and clean
+hts$hhincome <- as.numeric(hts$hhincome)
+hts_clean <- hts[!is.na(hhincome)]
+hts_clean$htype <- as.factor(hts_clean$htype)
+
+# Filter only two groups
+hts_two_groups <- hts_clean[htype %in% c("0", "1")]
+
+# Run t-test
+t.test(hhincome ~ htype, data = hts_two_groups)
+
+``````
+
+#2. T-Test: Income by Housing Type
+
+``````{r}
+# Convert and clean
+hts$hhincome <- as.numeric(hts$hhincome)
+hts_clean <- hts[!is.na(hhincome)]
+hts_clean$htype <- as.factor(hts_clean$htype)
+
+# Filter only two groups
+hts_two_groups <- hts_clean[htype %in% c("0", "1")]
+
+# Run t-test
+t.test(hhincome ~ htype, data = hts_two_groups)
+
+#2. T-Test: Income by Housing Type
+
+# Convert and clean
+hts$hhincome <- as.numeric(hts$hhincome)
+hts_clean <- hts[!is.na(hhincome)]
+hts_clean$htype <- as.factor(hts_clean$htype)
+
+# Filter only two groups
+hts_two_groups <- hts_clean[htype %in% c("0", "1")]
+
+# Run t-test
+t.test(hhincome ~ htype, data = hts_two_groups)
+
+#Histogram of Income by Housing Type
+
+ggplot(hts_two_groups, aes(x = hhincome, fill = htype)) +
+  geom_histogram(alpha = 0.6, position = "identity", bins = 30) +
+  labs(title = "Histogram of Household Income by Housing Type",
+       x = "Household Income", fill = "Housing Type") +
+  theme_minimal()
+
+``````
+
+#3. T-Test: San Antonio 
+``````{r}
+library(data.table)
+library(haven)
+library(foreign)
+library(ggplot2)
+library(dplyr)
+
+#1. Load Household Dataset
+hts <- read_sav("~/Desktop/Methods2_Labs/07-lab-assignment-2025-Green-range/datasets/HTS.household.10regions.sav")
+hts <- as.data.table(hts)
+
+# Convert and clean
+hts$hhincome <- as.numeric(hts$hhincome)
+hts_clean <- hts[!is.na(hhincome)]
+hts_clean$htype <- as.factor(hts_clean$htype)
+
+# Filter only two groups
+hts_two_groups <- hts_clean[htype %in% c("0", "1")]
+
+# Run t-test
+t.test(hhincome ~ htype, data = hts_two_groups)
+
+``````
+#2. T-Test: Income by Housing Type
+
+``````{r}
+library(data.table)
+library(haven)
+library(foreign)
+library(ggplot2)
+library(dplyr)
+
+#1. Load Household Dataset
+hts <- read_sav("~/Desktop/Methods2_Labs/07-lab-assignment-2025-Green-range/datasets/HTS.household.10regions.sav")
+hts <- as.data.table(hts)
+
+# Convert and clean
+hts$hhincome <- as.numeric(hts$hhincome)
+hts_clean <- hts[!is.na(hhincome)]
+hts_clean$htype <- as.factor(hts_clean$htype)
+
+# Filter only two groups
+hts_two_groups <- hts_clean[htype %in% c("0", "1")]
+
+# Run t-test
+t.test(hhincome ~ htype, data = hts_two_groups)
+
+``````
+
+#3. T-Test: San Antonio 
+``````{r}
+# Filter San Antonio
+hts_SA <- hts %>% filter(region == 15)
+
+# Create jobpop group
+jobpop_median <- median(hts_SA$jobpop, na.rm = TRUE)
+hts_SA <- hts_SA %>%
+  mutate(jobpop_group = ifelse(jobpop > jobpop_median, "High", "Low")) %>%
+  filter(!is.na(lnvmt), !is.na(jobpop_group))
+
+# Run t-test
+t.test(lnvmt ~ jobpop_group, data = hts_SA)
+
+``````
+
+
+#4. ANOVA: lnvmt by Income Category
+``````{r}
+# Ensure categorical income
+hts_SA$income_cat <- as.factor(hts_SA$income_cat)
+anova_result <- aov(lnvmt ~ income_cat, data = hts_SA)
+summary(anova_result)
+
+#QQ Plot (Normality)
+qqnorm(hts_SA$lnvmt)
+qqline(hts_SA$lnvmt)
+
+#Boxplot of lnvmt by Income
+
+boxplot(lnvmt ~ income_cat, data = hts_SA,
+        main = "Boxplot of Log Vehicle Miles Traveled",
+        xlab = "Income Category", ylab = "lnvmt")
+
+``````
+
+
+#5. Tukey Post Hoc Test
+``````{r}
+tukey_result <- TukeyHSD(anova_result)
+plot(tukey_result)
+tukey_result
+
+``````
+
+
+#6. Simulated T-Test Plot
+``````{r}
+# Create single_family var
+hts[, single_family := ifelse(htype == 0, "Single Family", "Other")]
+hts[, single_family := factor(single_family)]
+t_test_income <- t.test(hhincome ~ single_family, data = hts)
+
+# Plot
+curve(dt(x, df = t_test_income$parameter),
+      from = -4, to = 4, col = "darkblue", lwd = 2,
+      main = "Simulated T-distribution (T-Test)",
+      xlab = "T-value", ylab = "Density")
+abline(v = t_test_income$statistic, col = "red", lwd = 2)
+text(t_test_income$statistic, 0.05,
+     labels = paste0("t = ", round(t_test_income$statistic, 2)),
+     pos = 4, col = "red")
+``````
+
+
+#7. Summary of Results
+#T-test 1: There is a statistically significant difference in household income between housing types (t = ..., p < 0.001).
+
+#T-test 2: Households in high job-population areas drive less on average than those in low areas (p < 0.05).
+
+#ANOVA: Significant variation in VMT by income category (p < 0.01); Tukey’s test confirms differences between low and high income groups.

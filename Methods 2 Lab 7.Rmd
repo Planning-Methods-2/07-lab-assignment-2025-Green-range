@@ -1,0 +1,105 @@
+---
+title: "Methods2_Lab 7"
+author: "Gabriela Garza-Long"
+date: "2025-04-28"
+output: html_document
+---
+
+```{r }
+hts <- read_sav("07-lab-assignment-2025-Green-range/datasets/HTS.household.10regions.sav")
+
+
+# Create "single_family" variable
+hts[, single_family := ifelse(htype == 0, "Single Family", "Other")]
+hts[, single_family := factor(single_family)]
+
+# T-test
+t_test_income <- t.test(hhincome ~ single_family, data = hts)
+
+# Print result
+print(t_test_income)
+
+# Histogram of Household Income
+hist(hts$hhincome,
+     main = "Histogram of Household Income",
+     xlab = "Household Income",
+     col = "skyblue",
+     border = "white",
+     breaks = 30)
+
+
+curve(dt(x, df = t_test_income$parameter), 
+      from = -4, to = 4, 
+      n = 500, col = "darkblue", 
+      lwd = 2,
+      main = "Simulated T-distribution\n(T-test Household Income)",
+      xlab = "T-statistic", ylab = "Density")
+abline(v = t_test_income$statistic, col = "red", lwd = 2)
+text(t_test_income$statistic, 0.05, labels = paste0("t = ", round(t_test_income$statistic, 2)),
+     pos = 4, col = "red")
+
+curve(dt(x, df = t_test_income$parameter), 
+      from = -4, to = 4, 
+      n = 500, col = "darkblue", 
+      lwd = 2,
+      main = "Simulated T-distribution\n(T-test Household Income)",
+      xlab = "T-statistic", ylab = "Density")
+abline(v = t_test_income$statistic, col = "red", lwd = 2)
+text(t_test_income$statistic, 0.05, labels = paste0("t = ", round(t_test_income$statistic, 2)),
+     pos = 4, col = "red")
+
+#Short Interpretation: The T-test indicates that there is a statistically significant difference in household income between single-family and other housing types.Single Family households have higher mean incomes.
+
+# Filter only San Antonio region
+hts_clean <- hts[!is.na(hhincome)]
+hts_SA <- hts_clean[region == 15, ]
+
+# Create jobpop_group based on median
+median_jobpop <- median(hts_SA$jobpop, na.rm = TRUE)
+hts_SA[, jobpop_group := ifelse(jobpop > median_jobpop, "High", "Low")]
+
+# Remove missing lnvmt
+hts_SA_clean <- hts_SA[!is.na(lnvmt)]
+
+# T-test
+t_test_lnvmt <- t.test(lnvmt ~ jobpop_group, data = hts_SA_clean)
+print(t_test_lnvmt)
+
+# Histogram of lnvmt
+hist(hts_SA_clean$lnvmt,
+     main = "Histogram of Log Vehicle Miles Traveled (lnvmt)",
+     xlab = "Log Vehicle Miles Traveled",
+     col = "skyblue",
+     breaks = 30)
+
+
+# Make income_cat a factor
+hts_SA_clean$income_cat <- as.factor(hts_SA_clean$income_cat)
+
+# Run ANOVA
+anova_result <- aov(lnvmt ~ income_cat, data = hts_SA_clean)
+summary(anova_result)
+
+# Normality Check
+qqnorm(hts_SA_clean$lnvmt)
+qqline(hts_SA_clean$lnvmt)
+
+# Boxplot
+boxplot(lnvmt ~ income_cat, data = hts_SA_clean,
+        main = "Boxplot of lnvmt by Income Category",
+        xlab = "Income Category", ylab = "lnvmt")
+
+# Tukey Post-hoc Test
+tukey_result <- TukeyHSD(anova_result)
+plot(tukey_result)
+
+# Print Tukey Table
+print(tukey_result)
+
+
+#Interpretation: T-test (lnvmt ~ jobpop_group):Households in low job-population areas drive more.ANOVA (lnvmt ~ income_cat):Significant differences exist in lnvmt across income categories. Higher incomes = higher VMT.
+
+
+```
+
+
